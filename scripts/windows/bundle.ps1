@@ -78,8 +78,11 @@ function getGitTag(){
     if ($version) {
         $version = $version.TrimStart("v")
     }
-    if (!$version){ # if the version is null use the revision
-       $version = (git -C "$scriptdir\..\..\" rev-parse HEAD)
+    if (!($version -match '^\d+\.\d+\.\d+?$')) {
+        $latest_tag = (git -C "$scriptdir\..\..\" describe --abbrev=0 --match v[0-9]*)
+        $ts = ((Get-Date -UFormat '%s') -as [int])
+        $version = "$latest_tag" + "." + "$ts"
+        $version = $version.TrimStart("v")
     }
     return $version
 }

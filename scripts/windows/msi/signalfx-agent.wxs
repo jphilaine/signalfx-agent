@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<?define ProductVersion = "$(env.PRODUCT_VERSION)"?>
+<?define IconPath = "$(env.ICON_PATH)"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*" UpgradeCode="328012a7-4036-4a2b-94a5-2936ff1edcbd" Name="SignalFx Smart Agent" Version="$(var.ProductVersion)" Manufacturer="SignalFx, Inc." Language="1033">
+    <Package InstallerVersion="200" Platform="x64" Compressed="yes" Comments="Windows Installer Package"/>
+    <Media Id="1" Cabinet="product.cab" EmbedCab="yes"/>
+    <Icon Id="ProductIcon" SourceFile="$(var.IconPath)"/>
+    <Property Id="ARPPRODUCTICON" Value="ProductIcon"/>
+    <Property Id="ARPHELPLINK" Value="https://www.signalfx.com"/>
+    <Property Id="ARPURLINFOABOUT" Value="https://www.signalfx.com"/>
+    <Property Id="ARPNOREPAIR" Value="1"/>
+    <Property Id="ARPNOMODIFY" Value="1"/>
+	<MajorUpgrade Schedule="afterInstallInitialize" AllowDowngrades="yes"/>
+	
+    <Directory Id="TARGETDIR" Name="SourceDir">
+  	  <Directory Id="ProgramFiles64Folder">
+	    <Directory Id="COMPANYDIR" Name="SignalFx">
+		  <Directory Id="INSTALLDIR" Name="SignalFxAgent"/>
+		</Directory>
+	  </Directory>
+	</Directory>
+
+	<Feature Id="SignalFxAgent" Level="1">
+      <ComponentGroupRef Id="SignalFxAgent"/>
+    </Feature>
+
+    <!--
+ 	<CustomAction Id="InstallService" Return="check" Impersonate="yes" Execute="deferred" Directory="INSTALLDIR" ExeCommand='[INSTALLDIR]bin\signalfx-agent.exe -service "install" -logEvents -config "\ProgramData\SignalFxAgent\agent.yaml"' />
+	<CustomAction Id="StartService" Return="check" Impersonate="yes" Execute="deferred" Directory="INSTALLDIR" ExeCommand='[INSTALLDIR]bin\signalfx-agent.exe -service "start" -config "\ProgramData\SignalFxAgent\agent.yaml"' />
+	<CustomAction Id="StopService" Return="check" Impersonate="yes" Execute="deferred" Directory="INSTALLDIR" ExeCommand='[INSTALLDIR]bin\signalfx-agent.exe -service "stop" -config "\ProgramData\SignalFxAgent\agent.yaml"' />
+	<CustomAction Id="UninstallService" Return="check" Impersonate="yes" Execute="deferred" Directory="INSTALLDIR" ExeCommand='[INSTALLDIR]bin\signalfx-agent.exe -service "uninstall" -logEvents' />
+    -->
+
+    <!--
+    <InstallExecuteSequence>
+	  <Custom Action="InstallService" After="InstallFiles">NOT Installed</Custom>
+	  <Custom Action="StartService" After="InstallService">NOT Installed</Custom>
+	  <Custom Action="StopService" Before="RemoveFiles">UPGRADINGPRODUCTCODE OR (REMOVE="ALL")</Custom>
+	  <Custom Action="UninstallService" After="StopService">UPGRADINGPRODUCTCODE OR (REMOVE="ALL")</Custom>
+    </InstallExecuteSequence>
+    -->
+  </Product>
+</Wix>
