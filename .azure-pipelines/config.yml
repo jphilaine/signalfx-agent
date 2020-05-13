@@ -96,18 +96,26 @@ jobs:
   - template: 'templates/install-go.yml'
     parameters:
       version: $(GOVERSION)
+  - template: 'templates/install-choco.yml'
+  - powershell: |
+      choco install -y checksum
+      choco install -y wixtoolset --version 3.11.2
+    displayName: 'Install msi dependencies'
   - powershell: |
       if ("$(Build.SourceBranch)" -match "^refs/tags/v\d+\.\d+\.\d+$") {
           $env:AGENT_VERSION = ("$(Build.SourceBranchName)").Replace("v", "")
       } else {
-          $env:AGENT_VERSION = "$(Build.SourceVersion)"
+          $env:AGENT_VERSION = ""
       }
-      & ./scripts/windows/make.ps1 bundle
-    displayName: 'Build bundle'
+      & ./scripts/windows/make.ps1 bundle -agent_version "$env:AGENT_VERSION" -build_msi 1 -build_choco 1
+    displayName: 'Build bundle and msi'
   - task: CopyFiles@2
     inputs:
       sourceFolder: 'build'
-      contents: 'SignalFxAgent-*-win64.zip'
+      contents: |
+        'SignalFxAgent-*-win64.zip'
+        'SignalFxAgent-*-win64.msi'
+        'signalfx-agent*.nupkg'
       targetFolder: '$(Build.ArtifactStagingDirectory)'
       cleanTargetFolder: true
       overWrite: true
@@ -182,17 +190,29 @@ jobs:
 - job: 'win_2019_installer_tests'
   pool:
     vmImage: 'windows-2019'
+  dependsOn: 'win_bundle_build'
   steps:
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      artifactName: 'bundle'
+      downloadPath: 'build'
   - template: 'templates/run-pytest.yml'
     parameters:
       markers: 'installer and windows_only'
-      changesInclude: 'deployments/installer tests/packaging .azure-pipelines'
+      changesInclude: 'deployments/installer tests/packaging scripts/windows .azure-pipelines'
+      options: '--test-msi-path=$(Resolve-Path build\SignalFxAgent-*.msi) --test-nupkg-path=$(Resolve-Path build\signalfx-agent*.nupkg)'
 
 - job: 'win_2016_installer_tests'
   pool:
     vmImage: 'vs2017-win2016'
+  dependsOn: 'win_bundle_build'
   steps:
+  - task: DownloadBuildArtifacts@0
+    inputs:
+      artifactName: 'bundle'
+      downloadPath: 'build'
   - template: 'templates/run-pytest.yml'
     parameters:
       markers: 'installer and windows_only'
-      changesInclude: 'deployments/installer tests/packaging .azure-pipelines'
+      changesInclude: 'deployments/installer tests/packaging scripts/windows .azure-pipelines'
+      options: '--test-msi-path=$(Resolve-Path build\SignalFxAgent-*.msi) --test-nupkg-path=$(Resolve-Path build\signalfx-agent*.nupkg)'
